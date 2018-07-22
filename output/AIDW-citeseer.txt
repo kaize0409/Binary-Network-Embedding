@@ -1,0 +1,6 @@
+num_walks-10-walk_length-10-window_size-10-K-5-batch_size-100-lr-0.001
+input-input/citeseer-edgelist.txt
+input_ppmi-input/citeseer-PPMI-4.mat
+input_adj-input/citeseer-undirected.mat
+hidden_neurons-128
+Leak-0.2
