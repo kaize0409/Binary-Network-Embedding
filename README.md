@@ -5,7 +5,7 @@ AIDW exploits the strengths of generative adversarial networks in capturing late
 
 ## Installation
 `pip3 install -r requirements.txt`    
-Dataset : [citeseer](http://citeseerx.ist.psu.edu/index) Included [here](/)
+Dataset : [citeseer](http://citeseerx.ist.psu.edu/index) Included [here](ANE-Framework.jpeg)
 
 ## Usage
 Default paramenters - `python3 main.py`  
