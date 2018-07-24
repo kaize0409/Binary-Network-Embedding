@@ -1,5 +1,5 @@
 # Adverserial Inductive Deep Walk (AIDW)
-AIDW exploits the strengths of generative adversarial networks in capturing latent features, and learns stable and robust graph representations. It consists of two components, i.e., a structure preserving component and an adversarial learning component. The former component aims to capture network structural properties, while the latter contributes to learning robust representations by matching the posterior distribution of the latent representations to given priors.
+[AIDW](https://arxiv.org/pdf/1711.07838.pdf) exploits the strengths of generative adversarial networks in capturing latent features, and learns stable and robust graph representations. It consists of two components, i.e., a structure preserving component and an adversarial learning component. The former component aims to capture network structural properties, while the latter contributes to learning robust representations by matching the posterior distribution of the latent representations to given priors.
 
 <img src="ANE-Framework.jpg" width="70%">
 
