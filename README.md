@@ -12,6 +12,6 @@ Default paramenters - `python3 main.py`
 man page - `python3 main.py -h`
 
 ## Credits
-- [Dr. Elena Zheleva](https://www.cs.uic.edu/~elena/)
 - Quanyu Dai, Qiang Li, Jian Tang, Dan Wang. 2017. [_Adversarial Network Embedding_](https://arxiv.org/pdf/1711.07838.pdf)
+- [Dr. Elena Zheleva](https://www.cs.uic.edu/~elena/)
 
