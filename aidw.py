@@ -15,13 +15,15 @@ import scipy.io as sio
 
 
 def cross_entropy_loss(y_true, y_pred):
+    #print np.shape(y_true), np.shape(y_pred)
     return - K.mean(K.log(K.sigmoid(K.clip(K.sum(y_pred, axis = 1)*y_true, -6, 6))))
-
 
 def context_preserving(latent_dim):
     node_rep = Input(shape=(latent_dim, ), name='node_rep')
     context_rep = Input(shape=(latent_dim, ), name='context_rep')
+    print np.shape(node_rep), np.shape(context_rep)
     sim = multiply([node_rep, context_rep])
+    print np.shape(sim)
     return Model(inputs=[node_rep, context_rep], outputs=sim, name='context_aware')
 
 
@@ -32,11 +34,13 @@ def encoder(node_num, hidden_layers, hidden_neurons):
         encoded = Dense(hidden_neurons[i])(encoded)
         encoded = LeakyReLU(0.2)(encoded)
         BatchNormalization()
-        encoded = noise.GaussianNoise(0.2)(encoded)
+   	encoded = noise.GaussianNoise(0.2)(encoded)
+    #add softsign as the last layer
+    #encoded = Dense(hidden_neurons[-1], activation="softsign")(encoded)
     return Model(inputs=x, outputs=encoded)
 
 
-def model_discriminator(latent_dim, output_dim=2, hidden_dim=512, reg=lambda: L1L2(1e-7, 1e-7)):
+def model_discriminator(latent_dim, output_dim=1, hidden_dim=512, reg=lambda: L1L2(1e-7, 1e-7)):
     z = Input((latent_dim,))
     h = Dense(hidden_dim, kernel_regularizer=reg())(z)
     h = LeakyReLU(0.2)(h)
@@ -44,7 +48,8 @@ def model_discriminator(latent_dim, output_dim=2, hidden_dim=512, reg=lambda: L1
     h = Dense(hidden_dim, kernel_regularizer=reg())(h)
     h = LeakyReLU(0.2)(h)
     BatchNormalization()
-    y = Dense(output_dim, activation="softmax", kernel_regularizer=reg())(h)
+    #y = Dense(output_dim, activation="softmax", kernel_regularizer=reg())(h)
+    y = Dense(output_dim, activation="sigmoid", kernel_regularizer=reg())(h)
     return Model(z, y)
 
 
@@ -52,6 +57,7 @@ def model_discriminator(latent_dim, output_dim=2, hidden_dim=512, reg=lambda: L1
 
 def AIDW(args):
 
+    print args.T1, args.T2
     # read data and define batch generator
     nx_G = dataset.read_graph(args)
     G = node2vec.Graph(nx_G, args.directed, args.p, args.q)
@@ -91,14 +97,17 @@ def AIDW(args):
 
     # discriminator (z -> y)
     discriminator = model_discriminator(latent_dim)
-    discriminator.compile(optimizer=RMSprop(lr=args.lr), loss='categorical_crossentropy')
+    #discriminator.compile(optimizer=RMSprop(lr=args.lr), loss='categorical_crossentropy')
+    discriminator.compile(optimizer=RMSprop(lr=args.lr), loss='binary_crossentropy')
 
     # generator
+    discriminator.trainable = False
     x = encoder_node.inputs[0]
     z = encoder_node(x)
     y_fake = discriminator(z)
     gan = Model(inputs=x, outputs=y_fake)
-    gan.compile(optimizer=RMSprop(lr=args.lr), loss='mse')
+    #gan.compile(optimizer=RMSprop(lr=args.lr), loss='mse')
+    gan.compile(optimizer=RMSprop(lr=args.lr), loss='binary_crossentropy')
 
     epoch_gen_loss = []
     epoch_disc_loss = []
@@ -119,24 +128,31 @@ def AIDW(args):
         # the updating of the discriminator
         noise = np.random.uniform(-1.0, 1.0, [2*batchsize, latent_dim])
         z_batch = encoder_node.predict(data_batch)
-        X = np.concatenate((noise, z_batch))
-        y_dis = np.zeros([4 * batchsize, 2])
-        y_dis[0:2*batchsize, 1] = 1
-        y_dis[2*batchsize:, 0] = 1 
+        #X = np.concatenate((noise, z_batch))
+        #y_dis = np.zeros([4 * batchsize, 2])
+        #y_dis[0:2*batchsize, 1] = 1
+        #y_dis[2*batchsize:, 0] = 1 
+	valid = np.ones((2*batchsize, 1))
+	fake = np.zeros((2*batchsize, 1))
 
         for t in range(args.T1):
             # clip weights
-            discriminator.trainable = True
+            #discriminator.trainable = True
             weights = [np.clip(w, -0.01, 0.01) for w in discriminator.get_weights()]
             discriminator.set_weights(weights)
-            epoch_disc_loss.append(discriminator.train_on_batch(X, y_dis))
+            d_loss_real = discriminator.train_on_batch(noise, valid)
+	    d_loss_fake = discriminator.train_on_batch(z_batch, fake)
+	    epoch_disc_loss.append(0.5 * np.add(d_loss_real, d_loss_fake))
+
+	    #epoch_disc_loss.append(discriminator.train_on_batch(X, y_dis))
 
         # the updating of the generator
-        y_fake = np.zeros([2*batchsize, 2])
-        y_fake[:, 1] = 1
+        #y_fake = np.zeros([2*batchsize, 2])
+        #y_fake[:, 1] = 1
         for t in range(args.T2):
-            discriminator.trainable = False
-            epoch_gen_loss.append(gan.train_on_batch(data_batch, y_fake))
+            #discriminator.trainable = False
+            #epoch_gen_loss.append(gan.train_on_batch(data_batch, y_fake))
+            epoch_gen_loss.append(gan.train_on_batch(data_batch, valid))
 
 
         if (index)%(200) == 0:
